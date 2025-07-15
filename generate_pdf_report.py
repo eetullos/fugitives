@@ -80,11 +80,11 @@ def generate_pdf_report(figs, stats, prop_rates, malf_rates):
         plt.axis('off')
         summary_lines = [
             "Simulation Summary:",
-            f"Total Controllers Simulated: {stats.get('PC_count', 'N/A')}",
+            f"Total Components Simulated: {stats.get('PC_count', 'N/A')}",
             f"Timesteps Simulated: {stats.get('timesteps', 'N/A')}",
-            f"Initial Properly Operating Fraction (S0): {stats.get('S0', 'N/A'):.2f}" if isinstance(stats.get('S0'), float) else f"S0: {stats.get('S0', 'N/A')}",
+            #f"Initial Properly Operating Fraction (S0): {stats.get('S0', 'N/A'):.2f}" if isinstance(stats.get('S0'), float) else f"S0: {stats.get('S0', 'N/A')}",
             f"Gas Conversion Factor (p_gas): {stats.get('p_gas', 'N/A'):.6f}" if isinstance(stats.get('p_gas'), float) else f"p_gas: {stats.get('p_gas', 'N/A')}",
-            f"Transition Probabilities: p = {stats.get('p', 'N/A'):.4f}, r = {stats.get('r', 'N/A'):.4f}" if all(isinstance(stats.get(k), float) for k in ['p', 'r']) else f"p: {stats.get('p')}, r: {stats.get('r')}",
+            #f"Transition Probabilities: p = {stats.get('p', 'N/A'):.4f}, r = {stats.get('r', 'N/A'):.4f}" if all(isinstance(stats.get(k), float) for k in ['p', 'r']) else f"p: {stats.get('p')}, r: {stats.get('r')}",
             f"Average Emission Rate: {stats.get('avg_emission_rate', 'N/A'):.3f} scfh" if isinstance(stats.get('avg_emission_rate'), float) else f"avg_emission_rate: {stats.get('avg_emission_rate', 'N/A')}",
             f"Final Cumulative Emissions: {stats.get('final_cumulative_emission', 'N/A'):.2f} metric tons" if isinstance(stats.get('final_cumulative_emission'), float) else f"final_cumulative_emission: {stats.get('final_cumulative_emission', 'N/A')}",
             f"Report generated: {timestamp}"
@@ -97,7 +97,7 @@ def generate_pdf_report(figs, stats, prop_rates, malf_rates):
         page_counter += 1
 
         # --- Emission Rate Listings ---
-        for label, values in [("Properly Operating Rates", prop_rates),
+        for label, values in [("Component Emission Rates", prop_rates),
                               ("Malfunctioning Rates", malf_rates)]:
             if values is not None and len(values) > 0:
                 lines = wrap_list(label, values)
