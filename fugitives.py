@@ -1,9 +1,10 @@
+# Fugitive Emissions Estimation v1.0
+
 import streamlit as st
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
-import io
+from generate_pdf_report import generate_pdf_report  # Your branded, modular report generator
 
 # Title
 st.title("Fugitive Emissions Estimator")
@@ -59,47 +60,55 @@ if uploaded_file:
         st.write(f"**Estimated Total Emissions:** {mean_mt:.2f} metric tons")
         st.write(f"**95% Confidence Interval:** [{lower_mt:.2f}, {upper_mt:.2f}]")
 
-        # Generate PDF in memory
-        pdf_buffer = io.BytesIO()
-        with PdfPages(pdf_buffer) as pdf:
+        # Create figures
+        figs = []
 
-            # Histogram
-            fig1, ax1 = plt.subplots()
-            ax1.hist(bootstrap_population_totals_mt, bins=30, edgecolor='black')
-            ax1.set_title("Bootstrapped Population Emissions (Metric Tons)")
-            ax1.set_xlabel("Total Emissions (mt)")
-            ax1.set_ylabel("Frequency")
-            summary_text = (
-                f"Mean: {mean_mt:.2f} mt\n"
-                f"Population: {population_size}\n"
-                f"95% CI: [{lower_mt:.2f}, {upper_mt:.2f}]"
-            )
-            ax1.annotate(summary_text, xy=(0.95, 0.95), xycoords='axes fraction',
-                         fontsize=9, ha='right', va='top',
-                         bbox=dict(boxstyle="round", edgecolor="black", facecolor="white"))
-            pdf.savefig(fig1)
-            plt.close(fig1)
+        # Histogram
+        fig1, ax1 = plt.subplots()
+        ax1.hist(bootstrap_population_totals_mt, bins=30, edgecolor='black')
+        ax1.set_title("Bootstrapped Population Emissions (Metric Tons)")
+        ax1.set_xlabel("Total Emissions (mt)")
+        ax1.set_ylabel("Frequency")
+        figs.append(fig1)
+        st.pyplot(fig1)
 
-            # Boxplot
-            fig2, ax2 = plt.subplots()
-            ax2.boxplot(bootstrap_population_totals_mt, vert=False)
-            ax2.set_title("Boxplot of Bootstrapped Total Emissions")
-            ax2.set_xlabel("Total Emissions (mt)")
-            pdf.savefig(fig2)
-            plt.close(fig2)
+        # Boxplot
+        fig2, ax2 = plt.subplots()
+        ax2.boxplot(bootstrap_population_totals_mt, vert=False)
+        ax2.set_title("Boxplot of Bootstrapped Total Emissions")
+        ax2.set_xlabel("Total Emissions (mt)")
+        figs.append(fig2)
+        st.pyplot(fig2)
 
-            # Scatter
-            fig3, ax3 = plt.subplots()
-            ax3.scatter(bootstrap_population_totals_mt, bootstrap_mean_durations, alpha=0.3, s=10)
-            ax3.set_title("Avg Duration vs. Bootstrapped Total Emissions")
-            ax3.set_xlabel("Total Emissions (mt)")
-            ax3.set_ylabel("Avg Duration (hours)")
-            pdf.savefig(fig3)
-            plt.close(fig3)
+        # Scatter plot
+        fig3, ax3 = plt.subplots()
+        ax3.scatter(bootstrap_population_totals_mt, bootstrap_mean_durations, alpha=0.3, s=10)
+        ax3.set_title("Avg Duration vs. Bootstrapped Total Emissions")
+        ax3.set_xlabel("Total Emissions (mt)")
+        ax3.set_ylabel("Avg Duration (hours)")
+        figs.append(fig3)
+        st.pyplot(fig3)
+
+        # Format summary data
+        stats = {
+            "PC_count": population_size,
+            "timesteps": n_iterations,
+            "S0": None,
+            "p_gas": None,
+            "p": None,
+            "r": None,
+            "avg_emission_rate": mean_mt,
+            "final_cumulative_emission": mean_mt,
+            "ci_lower": lower_mt,
+            "ci_upper": upper_mt
+        }
+
+        # Generate branded PDF report
+        pdf_buffer = generate_pdf_report(figs, stats, fugitives_data, np.array([]))
 
         st.success("Analysis complete. You can now download your report.")
 
-        # Prepare download
+        # Streamlit download button
         st.download_button(
             label="📄 Download PDF Report",
             data=pdf_buffer.getvalue(),
