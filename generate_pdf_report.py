@@ -1,4 +1,4 @@
-#Fugitive Emissions Estimation v1.0
+# Fugitive Emissions Estimation v1.0
 
 # generate_pdf_report.py
 
@@ -19,7 +19,7 @@ def wrap_list(label, values, wrap=10):
     return lines
 
 
-def add_branded_elements(fig, page_num, timestamp=None):
+def add_branded_elements(fig, page_num, timestamp=None, footer_text=None):
     import matplotlib.pyplot as plt
     from PIL import Image
     import numpy as np
@@ -28,11 +28,14 @@ def add_branded_elements(fig, page_num, timestamp=None):
     fig_width, fig_height = fig.get_size_inches()
     dpi = fig.get_dpi()
 
-    # --- Footer text positioning (safe above page edge) ---
-    footer_text = "Fugitive Emissions Estimation v1.0 | Energy Emissions Modeling and Data Lab"
+    # --- Footer text (uses passed-in footer_text if provided; falls back to original v1.0 string) ---
+    base_footer = "Fugitive Emissions Estimation v1.0 | Energy Emissions Modeling and Data Lab"
+    footer = footer_text if isinstance(footer_text, str) and footer_text.strip() else base_footer
     if timestamp:
-        footer_text += f" | Generated: {timestamp}"
-    fig.text(0.5, 0.03, footer_text, ha='center', fontsize=8, color='gray')
+        footer += f" | Generated: {timestamp}"
+
+    # Safe bottom margin
+    fig.text(0.5, 0.03, footer, ha='center', fontsize=8, color='gray')
     fig.text(0.98, 0.03, f"Page {page_num}", ha='right', fontsize=8, color='gray')
 
     # --- Logo ---
@@ -59,18 +62,22 @@ def add_branded_elements(fig, page_num, timestamp=None):
             print(f"Error rendering logo: {e}")
 
 
-
 def generate_pdf_report(figs, stats, prop_rates, malf_rates):
     pdf_buffer = BytesIO()
     page_counter = 1
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+    # ---- NEW: build footer text from app_version/version if provided ----
+    app_name = stats.get("app_name", "Fugitive Emissions Estimation")
+    app_version = stats.get("app_version") or stats.get("version") or "1.0"
+    footer_text = f"{app_name} v{app_version} | Energy Emissions Modeling and Data Lab"
 
     with PdfPages(pdf_buffer) as pdf:
         # --- Render each passed-in figure ---
         for fig in figs:
             # Prevent logo overlap and improve spacing
             fig.subplots_adjust(top=0.80, bottom=0.15, left=0.1, right=0.95)
-            add_branded_elements(fig, page_counter)
+            add_branded_elements(fig, page_counter, timestamp, footer_text=footer_text)
             pdf.savefig(fig)
             plt.close(fig)
             page_counter += 1
@@ -82,16 +89,13 @@ def generate_pdf_report(figs, stats, prop_rates, malf_rates):
             "Simulation Summary:",
             f"Total Components Simulated: {stats.get('PC_count', 'N/A')}",
             f"Timesteps Simulated: {stats.get('timesteps', 'N/A')}",
-            #f"Initial Properly Operating Fraction (S0): {stats.get('S0', 'N/A'):.2f}" if isinstance(stats.get('S0'), float) else f"S0: {stats.get('S0', 'N/A')}",
-            f"Gas Conversion Factor (p_gas): {stats.get('p_gas', 'N/A'):.6f}" if isinstance(stats.get('p_gas'), float) else f"p_gas: {stats.get('p_gas', 'N/A')}",
-            #f"Transition Probabilities: p = {stats.get('p', 'N/A'):.4f}, r = {stats.get('r', 'N/A'):.4f}" if all(isinstance(stats.get(k), float) for k in ['p', 'r']) else f"p: {stats.get('p')}, r: {stats.get('r')}",
-            f"Average Emission Rate: {stats.get('avg_emission_rate', 'N/A'):.3f} scfh" if isinstance(stats.get('avg_emission_rate'), float) else f"avg_emission_rate: {stats.get('avg_emission_rate', 'N/A')}",
+            f"Average Emission Rate: {stats.get('avg_emission_rate', 'N/A'):.3f} kg/hr" if isinstance(stats.get('avg_emission_rate'), float) else f"avg_emission_rate: {stats.get('avg_emission_rate', 'N/A')}",
             f"Final Cumulative Emissions: {stats.get('final_cumulative_emission', 'N/A'):.2f} metric tons" if isinstance(stats.get('final_cumulative_emission'), float) else f"final_cumulative_emission: {stats.get('final_cumulative_emission', 'N/A')}",
             f"Report generated: {timestamp}"
         ]
         for i, line in enumerate(summary_lines):
             plt.text(0.05, 0.95 - i * 0.035, line, va='top', fontsize=10, family='monospace')
-        add_branded_elements(summary_fig, page_counter, timestamp)
+        add_branded_elements(summary_fig, page_counter, timestamp, footer_text=footer_text)
         pdf.savefig(summary_fig)
         plt.close(summary_fig)
         page_counter += 1
@@ -108,7 +112,7 @@ def generate_pdf_report(figs, stats, prop_rates, malf_rates):
                     plt.axis('off')
                     for j, line in enumerate(chunk):
                         plt.text(0.05, 0.95 - j * 0.025, line, va='top', fontsize=9, family='monospace')
-                    add_branded_elements(list_fig, page_counter, timestamp)
+                    add_branded_elements(list_fig, page_counter, timestamp, footer_text=footer_text)
                     pdf.savefig(list_fig)
                     plt.close(list_fig)
                     page_counter += 1

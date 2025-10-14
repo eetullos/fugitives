@@ -1,0 +1,7 @@
+[theme]
+base = "light"                   # Force light theme (ignores OS dark mode)
+primaryColor = "#0E7490"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#0F172A"
+font = "sans serif"
